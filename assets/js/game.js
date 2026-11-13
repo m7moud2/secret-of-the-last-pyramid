@@ -1,6 +1,6 @@
 /**
- * Secret of the Last Pyramid — Pharaoh Zuma Edition
- * 60FPS Egyptian Marble Shooter Engine
+ * Secret of the Last Pyramid — Pharaoh Zuma Edition (PRO UPGRADE)
+ * 60FPS Egyptian Marble Shooter Engine with Laser Sight, Falling Talismans & Rolling 3D Spheres
  */
 
 const EGYPT_COLORS = [
@@ -13,7 +13,7 @@ const EGYPT_COLORS = [
 
 const MARBLE_RADIUS = 16;
 const MARBLE_DIAMETER = MARBLE_RADIUS * 2;
-const BASE_SHOOT_SPEED = 22;
+const BASE_SHOOT_SPEED = 23;
 
 class PharaohZumaGame {
     constructor() {
@@ -28,6 +28,7 @@ class PharaohZumaGame {
         this.sunStones = parseInt(localStorage.getItem('pyramid_stones') || '10');
         this.currentLevel = 1;
         this.unlockedLevel = parseInt(localStorage.getItem('pyramid_unlocked_lvl') || '1');
+        this.levelStars = JSON.parse(localStorage.getItem('pyramid_stars') || '{}');
         this.gameState = 'menu'; // 'menu', 'playing', 'paused', 'gameover', 'victory'
 
         // Scarab Cannon
@@ -51,6 +52,7 @@ class PharaohZumaGame {
         this.particles = [];
         this.floatingTexts = [];
         this.bonusCoins = [];
+        this.fallingTalismans = []; // Dropping amulets (Luxor style)
         this.bonusSpawnTimer = 0;
 
         // Modifiers & Timers
@@ -65,6 +67,7 @@ class PharaohZumaGame {
         this.dangerLevel = 0;
         this.shakeTimer = 0;
         this.shakeIntensity = 0;
+        this.levelStartTime = 0;
 
         this.mousePos = { x: 450, y: 150 };
 
@@ -185,13 +188,15 @@ class PharaohZumaGame {
         this.generateTrack(level);
         this.chain = [];
         this.bonusCoins = [];
+        this.fallingTalismans = [];
         this.activeShot = null;
         this.marblesSpawned = 0;
-        this.levelMarblesTotal = 30 + (level * 8);
+        this.levelMarblesTotal = 30 + (level * 7);
         this.isFrozen = false;
         this.isReversing = false;
         this.comboCount = 0;
         this.dangerLevel = 0;
+        this.levelStartTime = performance.now();
         this.gameState = 'playing';
 
         this.prepareCannon();
@@ -200,7 +205,10 @@ class PharaohZumaGame {
         document.querySelectorAll('.game-overlay').forEach(el => el.classList.add('hidden'));
         document.getElementById('hud-panel').classList.remove('hidden');
 
-        if (window.soundEngine) window.soundEngine.playMatch(1);
+        if (window.soundEngine) {
+            window.soundEngine.startBGM();
+            window.soundEngine.playMatch(1);
+        }
     }
 
     getRandomColor() {
@@ -216,7 +224,7 @@ class PharaohZumaGame {
     createMarble(dist = 0, color = null, power = 'normal') {
         const assignedColor = color || this.getRandomColor();
         let pType = power;
-        if (power === 'normal' && Math.random() < 0.08) {
+        if (power === 'normal' && Math.random() < 0.09) {
             const types = ['bomb', 'reverse', 'freeze', 'lightning'];
             pType = types[Math.floor(Math.random() * types.length)];
         }
@@ -247,7 +255,7 @@ class PharaohZumaGame {
     shoot() {
         if (this.activeShot || !this.cannon.currentMarble) return;
 
-        const spd = BASE_SHOOT_SPEED + (this.cannon.level * 0.8);
+        const spd = BASE_SHOOT_SPEED + (this.cannon.level * 0.85);
         const vx = Math.cos(this.cannon.angle) * spd;
         const vy = Math.sin(this.cannon.angle) * spd;
 
@@ -272,7 +280,7 @@ class PharaohZumaGame {
         if (type === 'bomb') {
             if (this.coins < 50) return;
             this.coins -= 50;
-            this.triggerExplosion(this.mousePos.x, this.mousePos.y, 90);
+            this.triggerExplosion(this.mousePos.x, this.mousePos.y, 95);
             this.saveStorage();
             this.updateHUD();
         } else if (type === 'freeze') {
@@ -299,7 +307,7 @@ class PharaohZumaGame {
         this.shake(0.3, 10);
 
         // Particle blast
-        for (let i = 0; i < 35; i++) {
+        for (let i = 0; i < 40; i++) {
             const angle = Math.random() * Math.PI * 2;
             const spd = Math.random() * 8 + 2;
             this.particles.push({
@@ -330,7 +338,7 @@ class PharaohZumaGame {
         if (toRemove.length > 0) {
             this.score += toRemove.length * 100;
             this.coins += toRemove.length * 5;
-            this.spawnFloatingText(x, y - 20, `+${toRemove.length * 100} قنبلة!`, '#f59e0b');
+            this.spawnFloatingText(x, y - 20, `+${toRemove.length * 100} قنبلة الرمال!`, '#f59e0b');
         }
     }
 
@@ -364,7 +372,7 @@ class PharaohZumaGame {
         // Spawn Marbles onto track
         if (this.marblesSpawned < this.levelMarblesTotal) {
             this.spawnTimer += dt;
-            if (this.spawnTimer >= 0.55) {
+            if (this.spawnTimer >= 0.52) {
                 this.spawnTimer = 0;
                 if (this.chain.length === 0 || this.chain[this.chain.length - 1].dist > MARBLE_DIAMETER) {
                     this.chain.push(this.createMarble(0));
@@ -374,7 +382,7 @@ class PharaohZumaGame {
         }
 
         // Move Chain
-        const baseSpeed = 48; // px per second
+        const baseSpeed = 49; // px per second
         let moveStep = 0;
         if (this.isFrozen) {
             moveStep = 0;
@@ -407,6 +415,11 @@ class PharaohZumaGame {
         if (this.chain.length > 0) {
             const headDist = this.chain[0].dist;
             this.dangerLevel = Math.max(0, Math.min(1, (headDist - maxDist * 0.7) / (maxDist * 0.3)));
+            
+            if (window.soundEngine) {
+                window.soundEngine.setDangerTempo(this.dangerLevel > 0.6);
+            }
+
             if (this.dangerLevel > 0.85 && Math.random() < 0.05) {
                 if (window.soundEngine) window.soundEngine.playDanger();
             }
@@ -443,7 +456,7 @@ class PharaohZumaGame {
             // Check collision with Bonus Coins
             for (let i = this.bonusCoins.length - 1; i >= 0; i--) {
                 const coin = this.bonusCoins[i];
-                if (Math.hypot(coin.x - this.activeShot.x, coin.y - this.activeShot.y) < 30) {
+                if (Math.hypot(coin.x - this.activeShot.x, coin.y - this.activeShot.y) < 32) {
                     this.coins += 50;
                     this.sunStones += 1;
                     if (window.soundEngine) window.soundEngine.playCoin();
@@ -460,6 +473,24 @@ class PharaohZumaGame {
 
             if (hit) {
                 this.activeShot = null;
+            }
+        }
+
+        // Update Falling Talismans (Luxor style)
+        for (let i = this.fallingTalismans.length - 1; i >= 0; i--) {
+            const tal = this.fallingTalismans[i];
+            tal.y += tal.vy * dt;
+            tal.rotation += dt * 3;
+
+            // Check if player catches talisman with cursor or cannon
+            if (Math.hypot(tal.x - this.mousePos.x, tal.y - this.mousePos.y) < 28) {
+                this.collectTalisman(tal);
+                this.fallingTalismans.splice(i, 1);
+                continue;
+            }
+
+            if (tal.y > this.height + 40) {
+                this.fallingTalismans.splice(i, 1);
             }
         }
 
@@ -494,6 +525,26 @@ class PharaohZumaGame {
             ft.life -= dt;
             if (ft.life <= 0) this.floatingTexts.splice(i, 1);
         }
+    }
+
+    collectTalisman(tal) {
+        if (window.soundEngine) window.soundEngine.playCoin();
+        if (tal.type === 'coin') {
+            this.coins += 100;
+            this.spawnFloatingText(tal.x, tal.y, '+100 🪙 تميمة ذهبية!', '#f59e0b');
+        } else if (tal.type === 'sun') {
+            this.sunStones += 2;
+            this.spawnFloatingText(tal.x, tal.y, '+2 ☀️ تميمة رع!', '#fde047');
+        } else if (tal.type === 'bomb') {
+            this.triggerExplosion(450, 300, 130);
+            this.spawnFloatingText(tal.x, tal.y, 'انفجار فرعوني!', '#ef4444');
+        } else if (tal.type === 'freeze') {
+            this.isFrozen = true;
+            this.freezeTimer = 5.0;
+            this.spawnFloatingText(tal.x, tal.y, 'تجميد الزمن ❄️', '#38bdf8');
+        }
+        this.saveStorage();
+        this.updateHUD();
     }
 
     insertMarbleIntoChain(index, shotMarble) {
@@ -552,7 +603,7 @@ class PharaohZumaGame {
 
             // Burst particles
             const midPt = this.getTrackPoint(this.chain[Math.floor((left + right) / 2)].dist);
-            for (let i = 0; i < matchCount * 6; i++) {
+            for (let i = 0; i < matchCount * 7; i++) {
                 const angle = Math.random() * Math.PI * 2;
                 const spd = Math.random() * 6 + 1;
                 this.particles.push({
@@ -567,22 +618,41 @@ class PharaohZumaGame {
                 });
             }
 
+            // Chance to drop Falling Talisman (Luxor mechanic)
+            if (Math.random() < 0.45) {
+                const talismanTypes = ['coin', 'sun', 'bomb', 'freeze'];
+                this.fallingTalismans.push({
+                    x: midPt.x,
+                    y: midPt.y,
+                    vy: 85, // fall speed
+                    rotation: 0,
+                    type: talismanTypes[Math.floor(Math.random() * talismanTypes.length)]
+                });
+            }
+
             const points = matchCount * 100 * this.comboCount;
             this.score += points;
             this.coins += matchCount * 2;
-            this.spawnFloatingText(midPt.x, midPt.y - 20, `+${points}${this.comboCount > 1 ? ` x${this.comboCount} COMBO!` : ''}`, '#fde047');
+
+            // Arabic Combo Callouts
+            let callout = `+${points}`;
+            if (this.comboCount === 2) callout = '🔥 ضربة مزدوجة!';
+            else if (this.comboCount === 3) callout = '⚡ غضب رع!';
+            else if (this.comboCount >= 4) callout = '👑 أسطورة الفراعنة!';
+
+            this.spawnFloatingText(midPt.x, midPt.y - 20, callout, '#fde047');
 
             // Remove matched marbles
             this.chain.splice(left, matchCount);
 
-            // Check magnetic attraction if remaining chain has gap
+            // Magnetic attraction collapse
             setTimeout(() => {
                 if (left > 0 && left < this.chain.length) {
                     if (this.chain[left - 1].color.name === this.chain[left].color.name) {
                         this.checkMatches(left);
                     }
                 }
-            }, 250);
+            }, 230);
         } else {
             this.comboCount = 0;
         }
@@ -601,25 +671,49 @@ class PharaohZumaGame {
 
     gameOver() {
         this.gameState = 'gameover';
-        if (window.soundEngine) window.soundEngine.playGameOver();
+        if (window.soundEngine) {
+            window.soundEngine.stopBGM();
+            window.soundEngine.playGameOver();
+        }
         document.getElementById('gameover-score').innerText = this.score;
         document.getElementById('gameover-modal').classList.remove('hidden');
     }
 
     victory() {
         this.gameState = 'victory';
-        if (window.soundEngine) window.soundEngine.playVictory();
+        if (window.soundEngine) {
+            window.soundEngine.stopBGM();
+            window.soundEngine.playVictory();
+        }
+
+        // Calculate Stars (1 to 3 based on elapsed time)
+        const elapsedSec = (performance.now() - this.levelStartTime) / 1000;
+        let stars = 1;
+        if (elapsedSec < 35) stars = 3;
+        else if (elapsedSec < 60) stars = 2;
+
+        this.levelStars[this.currentLevel] = Math.max(this.levelStars[this.currentLevel] || 0, stars);
+        localStorage.setItem('pyramid_stars', JSON.stringify(this.levelStars));
+
         if (this.currentLevel >= this.unlockedLevel) {
             this.unlockedLevel = Math.min(15, this.currentLevel + 1);
             localStorage.setItem('pyramid_unlocked_lvl', this.unlockedLevel);
         }
-        this.coins += 100;
-        this.sunStones += 3;
+
+        const coinReward = 100 + (stars * 25);
+        this.coins += coinReward;
+        this.sunStones += stars;
         this.saveStorage();
+
+        // Render Stars in Victory Modal
+        const starsContainer = document.getElementById('victory-stars');
+        if (starsContainer) {
+            starsContainer.innerHTML = '★'.repeat(stars) + '<span class="text-slate-600">' + '★'.repeat(3 - stars) + '</span>';
+        }
 
         document.getElementById('victory-level').innerText = this.currentLevel;
         document.getElementById('victory-score').innerText = this.score;
-        document.getElementById('victory-coins').innerText = '+100 🪙  +3 ☀️';
+        document.getElementById('victory-coins').innerText = `+${coinReward} 🪙  +${stars} ☀️`;
         document.getElementById('victory-modal').classList.remove('hidden');
     }
 
@@ -650,7 +744,7 @@ class PharaohZumaGame {
             ctx.translate((Math.random() - 0.5) * this.shakeIntensity, (Math.random() - 0.5) * this.shakeIntensity);
         }
 
-        // 1. Ancient Egyptian Sandstone Background
+        // 1. Dynamic Egyptian World Background based on Level
         this.drawBackground(ctx);
 
         // 2. Draw Hieroglyphic Marble Track
@@ -659,11 +753,11 @@ class PharaohZumaGame {
         // 3. Draw Tomb Cave (The Entrance / Mouth of Sphinx)
         this.drawCave(ctx);
 
-        // 4. Draw Rolling Marble Chain
+        // 4. Draw Rolling Marble Chain with 3D Sphere Spin
         this.chain.forEach(m => {
             const pt = this.getTrackPoint(m.dist);
             if (pt) {
-                this.drawMarble(ctx, pt.x, pt.y, m.color, m.power);
+                this.drawMarble(ctx, pt.x, pt.y, m.color, m.power, m.dist);
             }
         });
 
@@ -686,15 +780,45 @@ class PharaohZumaGame {
             ctx.restore();
         });
 
-        // 6. Draw Active Shot
-        if (this.activeShot) {
-            this.drawMarble(ctx, this.activeShot.x, this.activeShot.y, this.activeShot.marble.color, this.activeShot.marble.power);
+        // 6. Draw Falling Talismans (Luxor style)
+        this.fallingTalismans.forEach(tal => {
+            ctx.save();
+            ctx.translate(tal.x, tal.y);
+            ctx.rotate(tal.rotation);
+            ctx.fillStyle = '#d97706';
+            ctx.beginPath();
+            ctx.arc(0, 0, 16, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#fde047';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 14px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            let icon = '🪙';
+            if (tal.type === 'sun') icon = '☀️';
+            else if (tal.type === 'bomb') icon = '💣';
+            else if (tal.type === 'freeze') icon = '❄️';
+            ctx.fillText(icon, 0, 0);
+            ctx.restore();
+        });
+
+        // 7. Draw Laser Aiming Guide (خط التصويب الليزري الفرعوني)
+        if (this.gameState === 'playing' && !this.activeShot) {
+            this.drawLaserSight(ctx);
         }
 
-        // 7. Draw Golden Scarab Cannon (مدفع الجعران الذهبي)
+        // 8. Draw Active Shot
+        if (this.activeShot) {
+            this.drawMarble(ctx, this.activeShot.x, this.activeShot.y, this.activeShot.marble.color, this.activeShot.marble.power, 0);
+        }
+
+        // 9. Draw Golden Scarab Cannon (مدفع الجعران الذهبي)
         this.drawScarabCannon(ctx);
 
-        // 8. Draw Particles & Floating Texts
+        // 10. Draw Particles & Floating Texts
         this.particles.forEach(p => {
             ctx.fillStyle = p.color;
             ctx.beginPath();
@@ -712,12 +836,72 @@ class PharaohZumaGame {
         ctx.restore();
     }
 
+    drawLaserSight(ctx) {
+        ctx.save();
+        const startX = this.cannon.x + Math.cos(this.cannon.angle) * 40;
+        const startY = this.cannon.y + Math.sin(this.cannon.angle) * 40;
+
+        // Trace ray to first marble or wall
+        let endX = startX + Math.cos(this.cannon.angle) * 800;
+        let endY = startY + Math.sin(this.cannon.angle) * 800;
+
+        // Check intersection with chain
+        for (let d = 20; d < 800; d += 15) {
+            const rx = startX + Math.cos(this.cannon.angle) * d;
+            const ry = startY + Math.sin(this.cannon.angle) * d;
+
+            for (let i = 0; i < this.chain.length; i++) {
+                const pt = this.getTrackPoint(this.chain[i].dist);
+                if (pt && Math.hypot(pt.x - rx, pt.y - ry) < MARBLE_RADIUS + 6) {
+                    endX = rx;
+                    endY = ry;
+                    d = 9999;
+                    break;
+                }
+            }
+        }
+
+        // Dotted Golden Laser Sight
+        ctx.strokeStyle = 'rgba(253, 224, 71, 0.45)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 8]);
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+
+        // Target Reticle Orb at endpoint
+        ctx.setLineDash([]);
+        ctx.fillStyle = 'rgba(253, 224, 71, 0.7)';
+        ctx.beginPath();
+        ctx.arc(endX, endY, 5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+    }
+
     drawBackground(ctx) {
-        // Deep desert / pyramid twilight gradient
+        const themeIndex = Math.floor((this.currentLevel - 1) / 5) % 3;
+
+        // Dynamic theme gradients
         const bgGrad = ctx.createRadialGradient(450, 300, 50, 450, 300, 500);
-        bgGrad.addColorStop(0, '#1c1917');
-        bgGrad.addColorStop(0.6, '#0f172a');
-        bgGrad.addColorStop(1, '#020617');
+        if (themeIndex === 0) {
+            // Theme 1: Desert Sun Temple
+            bgGrad.addColorStop(0, '#1c1917');
+            bgGrad.addColorStop(0.6, '#18120c');
+            bgGrad.addColorStop(1, '#090705');
+        } else if (themeIndex === 1) {
+            // Theme 2: Valley of the Kings Crypt
+            bgGrad.addColorStop(0, '#0f172a');
+            bgGrad.addColorStop(0.6, '#090d16');
+            bgGrad.addColorStop(1, '#020408');
+        } else {
+            // Theme 3: Golden Hall of Anubis
+            bgGrad.addColorStop(0, '#1a102f');
+            bgGrad.addColorStop(0.6, '#0f0a1c');
+            bgGrad.addColorStop(1, '#05030a');
+        }
+
         ctx.fillStyle = bgGrad;
         ctx.fillRect(0, 0, this.width, this.height);
 
@@ -731,10 +915,10 @@ class PharaohZumaGame {
         ctx.stroke();
 
         // Hieroglyphic Watermarks
-        ctx.fillStyle = 'rgba(212, 175, 55, 0.04)';
-        ctx.font = '40px serif';
-        ctx.fillText('𓃀 𓃁 𓃂 𓃃 𓃄 𓃅', 100, 80);
-        ctx.fillText('𓆈 𓆉 𓆊 𓆋 𓆌 𓆍', 600, 540);
+        ctx.fillStyle = 'rgba(212, 175, 55, 0.05)';
+        ctx.font = '36px serif';
+        ctx.fillText('𓃀 𓃁 𓃂 𓃃 𓃄 𓃅', 120, 80);
+        ctx.fillText('𓆈 𓆉 𓆊 𓆋 𓆌 𓆍', 580, 540);
     }
 
     drawTrack(ctx) {
@@ -787,9 +971,12 @@ class PharaohZumaGame {
         ctx.restore();
     }
 
-    drawMarble(ctx, x, y, color, power = 'normal') {
+    drawMarble(ctx, x, y, color, power = 'normal', dist = 0) {
         ctx.save();
         ctx.translate(x, y);
+
+        // 3D Rolling Sphere Rotation illusion
+        const rollAngle = (dist / MARBLE_RADIUS) % (Math.PI * 2);
 
         // Marble Sphere Gradient
         const grad = ctx.createRadialGradient(-5, -5, 2, 0, 0, MARBLE_RADIUS);
@@ -801,6 +988,13 @@ class PharaohZumaGame {
         ctx.beginPath();
         ctx.arc(0, 0, MARBLE_RADIUS, 0, Math.PI * 2);
         ctx.fill();
+
+        // Internal Hieroglyphic band spinning
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(0, 0, MARBLE_RADIUS * 0.65, rollAngle, rollAngle + Math.PI);
+        ctx.stroke();
 
         // Gloss Highlight
         ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
@@ -857,12 +1051,12 @@ class PharaohZumaGame {
 
         // Next Marble (Resting on Scarab's back)
         if (this.cannon.nextMarble) {
-            this.drawMarble(ctx, -14, 0, this.cannon.nextMarble.color, this.cannon.nextMarble.power);
+            this.drawMarble(ctx, -14, 0, this.cannon.nextMarble.color, this.cannon.nextMarble.power, 0);
         }
 
         // Current Marble (Held in Claws to Shoot)
         if (this.cannon.currentMarble) {
-            this.drawMarble(ctx, 32, 0, this.cannon.currentMarble.color, this.cannon.currentMarble.power);
+            this.drawMarble(ctx, 32, 0, this.cannon.currentMarble.color, this.cannon.currentMarble.power, 0);
         }
 
         ctx.restore();

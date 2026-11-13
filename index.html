@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>سر الهرم الأخير — زوما الفراعنة (Pharaoh Zuma)</title>
+    <title>سر الهرم الأخير — زوما الفراعنة (Pharaoh Zuma Deluxe)</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="assets/css/style.css">
@@ -20,34 +20,40 @@
             <canvas id="gameCanvas" width="900" height="600" class="w-full h-full object-contain cursor-crosshair"></canvas>
 
             <!-- In-Game HUD Header -->
-            <div id="hud-panel" class="absolute top-0 left-0 w-full p-3 sm:p-4 flex items-center justify-between pointer-events-none z-20 hidden">
+            <div id="hud-panel" class="absolute top-0 left-0 w-full p-2.5 sm:p-4 flex items-center justify-between pointer-events-none z-20 hidden">
                 <!-- Level & Progress Bar -->
-                <div class="flex items-center gap-2.5 pointer-events-auto">
-                    <div class="bg-slate-900/90 border border-amber-500/80 px-3.5 py-1.5 rounded-xl shadow-lg">
+                <div class="flex items-center gap-2 pointer-events-auto">
+                    <div class="bg-slate-900/90 border border-amber-500/80 px-3 py-1 rounded-xl shadow-lg">
                         <span id="hud-level" class="text-amber-400 text-xs sm:text-sm font-black tracking-wide">المرحلة 1</span>
                     </div>
-                    <div class="w-28 sm:w-36 bg-slate-900/90 h-4 rounded-full border border-amber-500/40 p-0.5 overflow-hidden">
+                    <div class="w-24 sm:w-36 bg-slate-900/90 h-3.5 sm:h-4 rounded-full border border-amber-500/40 p-0.5 overflow-hidden">
                         <div id="hud-progress-fill" class="h-full bg-gradient-to-r from-emerald-500 to-amber-400 rounded-full transition-all duration-300" style="width: 0%;"></div>
                     </div>
                 </div>
 
                 <!-- Score Display -->
-                <div class="pointer-events-auto bg-slate-900/90 border border-amber-500/80 px-5 py-1 rounded-xl shadow-lg text-center">
+                <div class="pointer-events-auto bg-slate-900/90 border border-amber-500/80 px-4 sm:px-6 py-1 rounded-xl shadow-lg text-center">
                     <span class="text-[9px] text-slate-400 uppercase tracking-widest block leading-none">النقاط</span>
                     <span id="hud-score" class="text-white text-base sm:text-lg font-black font-mono">0</span>
                 </div>
 
-                <!-- Coins & Sun Stones & Controls -->
-                <div class="flex items-center gap-2 pointer-events-auto">
-                    <div class="flex items-center gap-1 bg-slate-900/90 border border-amber-500/80 px-2.5 py-1 rounded-xl shadow-lg text-xs font-bold">
+                <!-- Coins & Sun Stones & Sound Controls -->
+                <div class="flex items-center gap-1.5 sm:gap-2 pointer-events-auto">
+                    <div class="flex items-center gap-1 bg-slate-900/90 border border-amber-500/80 px-2 py-1 rounded-xl shadow-lg text-xs font-bold">
                         <span>🪙</span>
                         <span id="hud-coins" class="text-amber-400 font-mono">500</span>
                     </div>
-                    <div class="flex items-center gap-1 bg-slate-900/90 border border-amber-500/80 px-2.5 py-1 rounded-xl shadow-lg text-xs font-bold">
+                    <div class="flex items-center gap-1 bg-slate-900/90 border border-amber-500/80 px-2 py-1 rounded-xl shadow-lg text-xs font-bold">
                         <span>☀️</span>
                         <span id="hud-stones" class="text-amber-300 font-mono">10</span>
                     </div>
-                    <button onclick="pauseGame()" class="w-8 h-8 rounded-xl bg-slate-900/90 border border-amber-500/80 flex items-center justify-center text-sm hover:scale-105 transition-transform" title="إيقاف مؤقت">
+                    <button id="btn-sound-toggle" onclick="toggleSound()" class="w-8 h-8 rounded-xl bg-slate-900/90 border border-amber-500/80 flex items-center justify-center text-sm hover:scale-105 active:scale-95 transition-transform" title="كتم/تشغيل المؤثرات">
+                        🔊
+                    </button>
+                    <button id="btn-bgm-toggle" onclick="toggleBGM()" class="w-8 h-8 rounded-xl bg-slate-900/90 border border-amber-500/80 flex items-center justify-center text-sm hover:scale-105 active:scale-95 transition-transform" title="كتم/تشغيل الموسيقى">
+                        🎵
+                    </button>
+                    <button onclick="pauseGame()" class="w-8 h-8 rounded-xl bg-slate-900/90 border border-amber-500/80 flex items-center justify-center text-sm hover:scale-105 active:scale-95 transition-transform" title="إيقاف مؤقت">
                         ⏸
                     </button>
                 </div>
@@ -85,30 +91,35 @@
                     <p class="text-xs sm:text-sm text-amber-200/80 mt-1 font-semibold">لعبة زوما الفراعنة — صوّب وطابق 3 كرات سحرية!</p>
                 </div>
 
-                <div class="flex flex-col gap-3 w-64">
+                <div class="flex flex-col gap-2.5 w-64">
                     <button onclick="window.game.startLevel(1)" class="gold-btn py-3.5 rounded-2xl font-black text-lg tracking-wider uppercase shadow-xl hover:scale-105 transition-all">
                         ▶ ابدأ المغامرة
                     </button>
-                    <button onclick="openLevelSelect()" class="bg-slate-800 hover:bg-slate-700 border border-amber-500/60 py-3 rounded-2xl font-bold text-sm text-amber-300 uppercase shadow-lg">
+                    <button onclick="openLevelSelect()" class="bg-slate-800 hover:bg-slate-700 border border-amber-500/60 py-2.5 rounded-2xl font-bold text-sm text-amber-300 uppercase shadow-lg">
                         🗺 اختيار المرحلة (15)
                     </button>
-                    <button onclick="openUpgradeModal()" class="bg-slate-800 hover:bg-slate-700 border border-amber-500/60 py-3 rounded-2xl font-bold text-sm text-amber-300 uppercase shadow-lg">
+                    <button onclick="openUpgradeModal()" class="bg-slate-800 hover:bg-slate-700 border border-amber-500/60 py-2.5 rounded-2xl font-bold text-sm text-amber-300 uppercase shadow-lg">
                         ⚒️ تطوير مدفع الجعران
                     </button>
-                    <button onclick="openShopModal()" class="bg-slate-800 hover:bg-slate-700 border border-amber-500/60 py-3 rounded-2xl font-bold text-sm text-amber-300 uppercase shadow-lg">
+                    <button onclick="claimDailyGift()" class="bg-amber-600 hover:bg-amber-500 border border-amber-400 py-2.5 rounded-2xl font-bold text-sm text-slate-950 uppercase shadow-lg flex items-center justify-center gap-1.5">
+                        <span>🎁</span>
+                        <span>هدية الفراعنة اليومية</span>
+                    </button>
+                    <button onclick="openShopModal()" class="bg-slate-800 hover:bg-slate-700 border border-amber-500/60 py-2 rounded-2xl font-bold text-xs text-amber-300 uppercase shadow-lg">
                         🏺 متجر الكنوز
                     </button>
                 </div>
 
-                <div class="mt-6 text-[11px] text-slate-400">
+                <div class="mt-5 text-[11px] text-slate-400 flex flex-col items-center gap-1">
                     <span>💡 يمكنك التبديل بين الكرات بالزر الأيمن للماوس أو زر المسافة (Space)</span>
+                    <span>🎯 خط التوجيه الليزري يساعدك على إصابة الهدف بدقة تامة</span>
                 </div>
             </div>
 
             <!-- 2. Level Select Overlay -->
             <div id="level-select-overlay" class="game-overlay absolute inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-6 z-30 hidden">
                 <div class="flex items-center justify-between w-full max-w-md mb-6">
-                    <h2 class="text-xl font-black text-amber-400">اختر المرحلة</h2>
+                    <h2 class="text-xl font-black text-amber-400">اختر المرحلة الفرعونية</h2>
                     <button onclick="closeLevelSelect()" class="w-8 h-8 rounded-xl bg-slate-800 text-white font-bold hover:bg-slate-700">✕</button>
                 </div>
 
@@ -139,7 +150,7 @@
                     <div class="bg-slate-950/60 rounded-xl p-3 space-y-1.5 text-xs border border-slate-800 mb-3">
                         <div class="flex justify-between">
                             <span class="text-slate-400">سرعة إطلاق الكرات:</span>
-                            <span id="upg-speed-stat" class="text-emerald-400 font-bold font-mono">22 → 24</span>
+                            <span id="upg-speed-stat" class="text-emerald-400 font-bold font-mono">23 → 25</span>
                         </div>
                         <div class="flex justify-between">
                             <span class="text-slate-400">احتمال مضاعفة النقاط:</span>
@@ -165,7 +176,8 @@
                     <h3 class="text-2xl font-black text-amber-400 mb-1">تم تطهير المسار!</h3>
                     <p class="text-xs text-slate-300">أكملت المرحلة <span id="victory-level">1</span> بنجاح</p>
 
-                    <div class="flex justify-center gap-2 my-4 text-3xl text-amber-400">
+                    <!-- Real stars rating container -->
+                    <div id="victory-stars" class="flex justify-center gap-2 my-4 text-3xl text-amber-400">
                         <span>★</span><span>★</span><span>★</span>
                     </div>
 
@@ -176,7 +188,7 @@
                         </div>
                         <div class="flex justify-between">
                             <span class="text-slate-400">المكافأة:</span>
-                            <span id="victory-coins" class="font-bold text-amber-400 font-mono">+100 🪙  +3 ☀️</span>
+                            <span id="victory-coins" class="font-bold text-amber-400 font-mono">+125 🪙  +3 ☀️</span>
                         </div>
                     </div>
 
@@ -190,7 +202,7 @@
             <div id="gameover-modal" class="game-overlay absolute inset-0 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-6 z-30 hidden">
                 <div class="bg-slate-900 border-4 border-red-500 rounded-3xl p-6 text-center max-w-sm w-full shadow-2xl">
                     <div class="text-5xl mb-2">💀</div>
-                    <h3 class="text-2xl font-black text-red-500 mb-1">وصلت الكرات للمقبرة!</h3>
+                    <h2 class="text-2xl font-black text-red-500 mb-1">وصلت الكرات للمقبرة!</h2>
                     <p class="text-xs text-slate-300 mb-4">ابتلعت بوابة أبو الهول كرات الفراعنة</p>
 
                     <div class="bg-slate-800 p-3 rounded-2xl border border-slate-700 mb-4 text-xs">
