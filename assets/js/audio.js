@@ -1,6 +1,6 @@
 /**
  * Secret of the Last Pyramid: Pharaoh Zuma — Pro Sound & Music Engine
- * Procedural Web Audio API for Egyptian Marble Shooter + Dynamic Egyptian BGM
+ * Procedural Web Audio API for Egyptian Marble Shooter + Dynamic Egyptian BGM + Boss Effects
  */
 
 class SoundEngine {
@@ -12,6 +12,7 @@ class SoundEngine {
         this.bgmInterval = null;
         this.tempo = 110; // BPM
         this.step = 0;
+        this.isBossTheme = false;
 
         // Ancient Egyptian Phrygian Dominant scale frequencies (D Phrygian Dominant)
         this.scale = [146.83, 155.56, 185.00, 196.00, 220.00, 233.08, 277.18, 293.66, 311.13, 369.99];
@@ -68,38 +69,41 @@ class SoundEngine {
     }
 
     // Dynamic Procedural Egyptian BGM (Darbuka Rhythm + Mystic Oud Arpeggio)
-    startBGM() {
-        if (!this.bgmEnabled || this.isBgmPlaying) return;
+    startBGM(isBoss = false) {
+        if (!this.bgmEnabled) return;
         this.ensureContext();
         if (!this.ctx) return;
+        this.stopBGM();
         this.isBgmPlaying = true;
+        this.isBossTheme = isBoss;
+        this.tempo = isBoss ? 135 : 110;
 
-        const melody = [0, 2, 3, 4, 3, 2, 1, 0, 4, 5, 7, 5, 4, 3, 2, 1];
+        const melody = isBoss 
+            ? [4, 5, 7, 8, 7, 5, 4, 3, 5, 4, 3, 2, 3, 2, 1, 0]
+            : [0, 2, 3, 4, 3, 2, 1, 0, 4, 5, 7, 5, 4, 3, 2, 1];
+
         const bass = [0, 0, 4, 0, 3, 0, 1, 0];
 
         const tick = () => {
             if (!this.isBgmPlaying || !this.bgmEnabled) return;
-            const now = this.ctx.currentTime;
 
             // Percussion: Darbuka Dum & Tak
             const beat = this.step % 8;
             if (beat === 0 || beat === 4) {
-                // Dum (Low deep hit)
-                this.playPercussion(65, 0.12, 0.18, 'triangle');
+                this.playPercussion(isBoss ? 55 : 65, 0.14, isBoss ? 0.25 : 0.18, 'triangle');
             } else if (beat === 2 || beat === 6 || beat === 7) {
-                // Tak (Crisp high hit)
-                this.playPercussion(280, 0.05, 0.1, 'sine');
+                this.playPercussion(isBoss ? 320 : 280, 0.05, 0.12, 'sine');
             }
 
             // Mystic Oud Note
             const noteIdx = melody[this.step % melody.length];
             const freq = this.scale[noteIdx] || 220;
-            this.playTone(freq, 'triangle', 0.22, 0.06, -10);
+            this.playTone(freq, isBoss ? 'sawtooth' : 'triangle', 0.22, isBoss ? 0.09 : 0.06, -10);
 
             // Drone Bass
             if (this.step % 4 === 0) {
                 const bassIdx = bass[(this.step / 4) % bass.length];
-                this.playTone(this.scale[bassIdx] * 0.5, 'sine', 0.4, 0.08, 0);
+                this.playTone(this.scale[bassIdx] * 0.5, 'sine', 0.45, 0.1, 0);
             }
 
             this.step++;
@@ -116,7 +120,9 @@ class SoundEngine {
     }
 
     setDangerTempo(isDanger) {
-        this.tempo = isDanger ? 140 : 110;
+        if (!this.isBossTheme) {
+            this.tempo = isDanger ? 140 : 110;
+        }
     }
 
     playPercussion(freq, duration, gainVal, type = 'sine') {
@@ -137,7 +143,7 @@ class SoundEngine {
         } catch (e) {}
     }
 
-    // Shoot Marble from Scarab
+    // Shoot Marble
     playShoot() {
         this.playTone(520, 'triangle', 0.12, 0.22, -280);
     }
@@ -159,6 +165,18 @@ class SoundEngine {
         setTimeout(() => {
             this.playTone(baseFreq * 1.25, 'sine', 0.2, 0.32, 80);
         }, 70);
+    }
+
+    // Boss Hit Impact
+    playBossHit() {
+        this.playTone(200, 'sawtooth', 0.18, 0.35, -120);
+        this.playTone(100, 'triangle', 0.25, 0.4, -40);
+    }
+
+    // Boss Defeated Roar & Fanfare
+    playBossDefeated() {
+        this.playTone(80, 'sawtooth', 0.8, 0.5, -40);
+        setTimeout(() => this.playVictory(), 400);
     }
 
     // Bomb / Explosion
@@ -205,7 +223,6 @@ class SoundEngine {
         });
     }
 
-    // Sound and Music Toggles
     toggleSound() {
         this.enabled = !this.enabled;
         localStorage.setItem('pyramid_sound_enabled', this.enabled);
@@ -216,7 +233,7 @@ class SoundEngine {
         this.bgmEnabled = !this.bgmEnabled;
         localStorage.setItem('pyramid_bgm_enabled', this.bgmEnabled);
         if (this.bgmEnabled) {
-            this.startBGM();
+            this.startBGM(this.isBossTheme);
         } else {
             this.stopBGM();
         }
