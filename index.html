@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>سر الهرم الأخير — Secret of the Last Pyramid</title>
+    <title>سر الهرم الأخير — زوما الفراعنة (Pharaoh Zuma)</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="assets/css/style.css">
@@ -14,274 +14,237 @@
     <div id="game-wrapper" class="relative w-screen h-screen flex items-center justify-center">
 
         <!-- Canvas Container -->
-        <div id="canvas-container" class="relative w-full h-full flex items-center justify-center overflow-hidden">
+        <div id="canvas-container" class="relative w-full h-full max-w-[900px] max-h-[600px] flex items-center justify-center overflow-hidden border-2 border-amber-500/40 rounded-2xl shadow-2xl bg-black">
             
             <!-- Main Game Canvas -->
-            <canvas id="gameCanvas" width="1280" height="720"></canvas>
+            <canvas id="gameCanvas" width="900" height="600" class="w-full h-full object-contain cursor-crosshair"></canvas>
 
-            <!-- Top HUD Panel -->
-            <div id="hud-top" class="absolute top-0 left-0 w-full p-3 sm:p-4 flex items-start justify-between pointer-events-none z-30">
-                
-                <!-- Player Status (HP & Energy) -->
-                <div class="pointer-events-auto flex items-center gap-3 bg-slate-900/85 backdrop-blur-md border border-amber-500/40 p-2 sm:p-2.5 rounded-2xl shadow-xl">
-                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-amber-600 to-amber-900 border border-amber-400 flex items-center justify-center text-xl sm:text-2xl shadow-inner">
-                        🧭
+            <!-- In-Game HUD Header -->
+            <div id="hud-panel" class="absolute top-0 left-0 w-full p-3 sm:p-4 flex items-center justify-between pointer-events-none z-20 hidden">
+                <!-- Level & Progress Bar -->
+                <div class="flex items-center gap-2.5 pointer-events-auto">
+                    <div class="bg-slate-900/90 border border-amber-500/80 px-3.5 py-1.5 rounded-xl shadow-lg">
+                        <span id="hud-level" class="text-amber-400 text-xs sm:text-sm font-black tracking-wide">المرحلة 1</span>
                     </div>
-                    <div class="flex flex-col gap-1 w-32 sm:w-44">
-                        <div class="flex justify-between items-center text-[11px] font-bold text-slate-300">
-                            <span>الصحة</span>
-                            <span id="hud-hp-text" class="text-emerald-400 font-mono">100 / 100</span>
-                        </div>
-                        <div class="w-full bg-slate-800 h-2.5 sm:h-3 rounded-full overflow-hidden border border-slate-700">
-                            <div id="hud-hp-bar" class="h-full bg-gradient-to-r from-red-500 to-emerald-500 rounded-full transition-all duration-200" style="width: 100%;"></div>
-                        </div>
-                        <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                            <div id="hud-energy-bar" class="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full transition-all duration-150" style="width: 100%;"></div>
-                        </div>
+                    <div class="w-28 sm:w-36 bg-slate-900/90 h-4 rounded-full border border-amber-500/40 p-0.5 overflow-hidden">
+                        <div id="hud-progress-fill" class="h-full bg-gradient-to-r from-emerald-500 to-amber-400 rounded-full transition-all duration-300" style="width: 0%;"></div>
                     </div>
                 </div>
 
-                <!-- Floor & Score Badge -->
-                <div class="pointer-events-auto text-center bg-slate-900/85 backdrop-blur-md border border-amber-500/40 px-4 py-1.5 sm:px-6 sm:py-2 rounded-2xl shadow-xl">
-                    <span id="hud-floor" class="text-amber-400 text-xs sm:text-sm font-black tracking-wide block">الطابق 1 - الموجة 1</span>
-                    <span class="text-[10px] text-slate-400 font-bold">النقاط: <span id="hud-score" class="text-white font-mono">0</span></span>
+                <!-- Score Display -->
+                <div class="pointer-events-auto bg-slate-900/90 border border-amber-500/80 px-5 py-1 rounded-xl shadow-lg text-center">
+                    <span class="text-[9px] text-slate-400 uppercase tracking-widest block leading-none">النقاط</span>
+                    <span id="hud-score" class="text-white text-base sm:text-lg font-black font-mono">0</span>
                 </div>
 
-                <!-- Currency & Controls Shortcuts -->
-                <div class="pointer-events-auto flex items-center gap-2 sm:gap-3">
-                    <!-- Coins -->
-                    <div class="flex items-center gap-1.5 bg-slate-900/85 border border-amber-500/40 px-3 py-1.5 rounded-xl shadow-lg">
-                        <span class="text-base sm:text-lg">🪙</span>
-                        <span id="hud-coins" class="text-amber-400 font-mono text-xs sm:text-sm font-black">500</span>
+                <!-- Coins & Sun Stones & Controls -->
+                <div class="flex items-center gap-2 pointer-events-auto">
+                    <div class="flex items-center gap-1 bg-slate-900/90 border border-amber-500/80 px-2.5 py-1 rounded-xl shadow-lg text-xs font-bold">
+                        <span>🪙</span>
+                        <span id="hud-coins" class="text-amber-400 font-mono">500</span>
                     </div>
-
-                    <!-- Sun Stones -->
-                    <div class="flex items-center gap-1.5 bg-slate-900/85 border border-amber-500/40 px-3 py-1.5 rounded-xl shadow-lg">
-                        <span class="text-base sm:text-lg">☀️</span>
-                        <span id="hud-stones" class="text-amber-300 font-mono text-xs sm:text-sm font-black">5</span>
+                    <div class="flex items-center gap-1 bg-slate-900/90 border border-amber-500/80 px-2.5 py-1 rounded-xl shadow-lg text-xs font-bold">
+                        <span>☀️</span>
+                        <span id="hud-stones" class="text-amber-300 font-mono">10</span>
                     </div>
-
-                    <!-- Inventory Button -->
-                    <button onclick="window.openInventoryModal()" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-900/85 border border-amber-500/40 flex items-center justify-center text-base sm:text-lg hover:bg-amber-500/20 active:scale-95 transition-all shadow-lg" title="الحقيبة والأسلحة">
-                        🎒
-                    </button>
-
-                    <!-- Upgrade Center Button -->
-                    <button onclick="window.openUpgradeModal()" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-500 text-slate-950 font-black flex items-center justify-center text-base sm:text-lg hover:bg-amber-400 active:scale-95 transition-all shadow-lg" title="تطوير السلاح">
-                        ⚒️
-                    </button>
-
-                    <!-- Shop Button -->
-                    <button onclick="window.openShopModal()" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-900/85 border border-amber-500/40 flex items-center justify-center text-base sm:text-lg hover:bg-amber-500/20 active:scale-95 transition-all shadow-lg" title="المتجر">
-                        🏺
+                    <button onclick="pauseGame()" class="w-8 h-8 rounded-xl bg-slate-900/90 border border-amber-500/80 flex items-center justify-center text-sm hover:scale-105 transition-transform" title="إيقاف مؤقت">
+                        ⏸
                     </button>
                 </div>
             </div>
 
-            <!-- Boss HUD Bar (Hidden until boss spawns) -->
-            <div id="boss-hud-panel" class="hidden absolute top-20 left-1/2 -translate-x-1/2 w-11/12 max-w-lg bg-slate-950/90 border-2 border-red-500/80 p-3 rounded-2xl shadow-2xl z-30">
-                <div class="flex justify-between items-center mb-1 text-xs font-black">
-                    <span id="boss-title" class="text-red-400 flex items-center gap-1">👑 حارس المعبد الحجري</span>
-                    <span class="text-amber-400">الزعيم</span>
+            <!-- In-Game Boosters Tray (Bottom Right) -->
+            <div id="boosters-tray" class="absolute bottom-3 right-3 flex gap-2 z-20">
+                <button onclick="window.game.swapMarbles()" class="flex flex-col items-center bg-slate-900/90 border-2 border-amber-400 p-2 rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-transform" title="تبديل الكرة (Space / كليك يمين)">
+                    <span class="text-xl">🔄</span>
+                    <span class="text-[9px] text-amber-300 font-bold">تبديل</span>
+                </button>
+                <button onclick="window.game.useBooster('bomb')" class="flex flex-col items-center bg-slate-900/90 border-2 border-red-500 p-2 rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-transform" title="قنبلة الرمال (50 ذهب)">
+                    <span class="text-xl">💣</span>
+                    <span class="text-[9px] text-amber-400 font-bold font-mono">50 🪙</span>
+                </button>
+                <button onclick="window.game.useBooster('freeze')" class="flex flex-col items-center bg-slate-900/90 border-2 border-blue-400 p-2 rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-transform" title="تجميد تحوت (40 ذهب)">
+                    <span class="text-xl">❄️</span>
+                    <span class="text-[9px] text-amber-400 font-bold font-mono">40 🪙</span>
+                </button>
+                <button onclick="window.game.useBooster('reverse')" class="flex flex-col items-center bg-slate-900/90 border-2 border-amber-500 p-2 rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-transform" title="إرجاع الكرات (30 ذهب)">
+                    <span class="text-xl">⏪</span>
+                    <span class="text-[9px] text-amber-400 font-bold font-mono">30 🪙</span>
+                </button>
+            </div>
+
+            <!-- OVERLAYS & MODALS -->
+
+            <!-- 1. Main Menu Overlay -->
+            <div id="main-menu-overlay" class="game-overlay absolute inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-6 z-30">
+                <div class="text-center mb-6 animate-pulse">
+                    <span class="text-amber-400 text-xs tracking-widest uppercase font-black">🏺 أسرار الفراعنة والأهرامات 🏺</span>
+                    <h1 class="text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-b from-amber-300 via-amber-400 to-amber-600 drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)] mt-1">
+                        سر الهرم الأخير
+                    </h1>
+                    <p class="text-xs sm:text-sm text-amber-200/80 mt-1 font-semibold">لعبة زوما الفراعنة — صوّب وطابق 3 كرات سحرية!</p>
                 </div>
-                <div class="w-full bg-slate-800 h-3 rounded-full overflow-hidden border border-red-950">
-                    <div id="boss-hp-fill" class="h-full bg-gradient-to-r from-red-600 via-amber-500 to-red-500 rounded-full transition-all duration-150" style="width: 100%;"></div>
-                </div>
-            </div>
 
-            <!-- Mobile Touch Controls: Virtual Joystick & Action Buttons -->
-            <div id="virtual-joystick-zone">
-                <div id="joystick-stick"></div>
-            </div>
-
-            <div id="mobile-actions">
-                <button id="btn-dodge" class="touch-action-btn border-blue-400/60" title="مراوغة (Dash)">
-                    <span>💨</span>
-                    <span class="text-[9px] font-bold text-slate-300">مراوغة</span>
-                </button>
-                <button id="btn-potion" class="touch-action-btn border-emerald-400/60" title="شفاء (Potion)">
-                    <span>❤️</span>
-                    <span class="text-[9px] font-bold text-slate-300">جرعة</span>
-                </button>
-                <button id="btn-skill" class="touch-action-btn border-amber-400" title="شعاع رع (Skill)">
-                    <span>🔥</span>
-                    <span class="text-[9px] font-bold text-amber-300">شعاع رع</span>
-                </button>
-                <button id="btn-attack" class="touch-action-btn bg-amber-500/30 border-amber-400" title="هجوم (Attack)">
-                    <span>⚔️</span>
-                    <span class="text-[9px] font-bold text-amber-400">هجوم</span>
-                </button>
-            </div>
-
-            <!-- Desktop Controls Hint (Bottom Left) -->
-            <div class="hidden sm:flex absolute bottom-3 left-3 bg-slate-900/70 border border-slate-700/50 px-3 py-1.5 rounded-xl text-[11px] text-slate-400 gap-3 z-20 pointer-events-none">
-                <span>الحركة: <b class="text-amber-400">WASD</b></span>
-                <span>هجوم: <b class="text-amber-400">Space / كليك</b></span>
-                <span>مهارة: <b class="text-amber-400">K / كليك يمين</b></span>
-                <span>مراوغة: <b class="text-amber-400">L / Shift</b></span>
-            </div>
-
-            <!-- MODALS -->
-
-            <!-- 1. Start Game / Title Screen Modal -->
-            <div id="start-modal" class="modal modal-active absolute inset-0 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 z-50">
-                <div class="max-w-md w-full bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-amber-500/70 rounded-3xl p-6 sm:p-8 text-center shadow-2xl hieroglyph-border">
-                    <div class="text-5xl mb-3 animate-bounce">🏺</div>
-                    <h1 class="text-2xl sm:text-3xl font-black text-amber-400 mb-1 gold-glow">سر الهرم الأخير</h1>
-                    <p class="text-xs sm:text-sm text-slate-400 mb-6 font-semibold">مغامرة الأكشن وتقمص الأدوار داخل المقابر الفرعونية</p>
-                    
-                    <div class="bg-slate-800/60 rounded-2xl p-4 text-xs text-slate-300 text-right space-y-2 mb-6 border border-slate-700/60">
-                        <p class="flex items-center gap-2"><span class="text-amber-400">⚔️</span> قاتل العقارب والمومياوات وجنود الظل</p>
-                        <p class="flex items-center gap-2"><span class="text-amber-400">☀️</span> اجمع الذهب وأحجار الشمس لتطوير سلاحك</p>
-                        <p class="flex items-center gap-2"><span class="text-amber-400">👑</span> اهزم حراس المعبد واعبر بوابة حورس</p>
-                    </div>
-
-                    <button id="start-game-btn" class="w-full py-3.5 rounded-2xl gold-btn text-base font-black tracking-wider shadow-lg">
+                <div class="flex flex-col gap-3 w-64">
+                    <button onclick="window.game.startLevel(1)" class="gold-btn py-3.5 rounded-2xl font-black text-lg tracking-wider uppercase shadow-xl hover:scale-105 transition-all">
                         ▶ ابدأ المغامرة
                     </button>
+                    <button onclick="openLevelSelect()" class="bg-slate-800 hover:bg-slate-700 border border-amber-500/60 py-3 rounded-2xl font-bold text-sm text-amber-300 uppercase shadow-lg">
+                        🗺 اختيار المرحلة (15)
+                    </button>
+                    <button onclick="openUpgradeModal()" class="bg-slate-800 hover:bg-slate-700 border border-amber-500/60 py-3 rounded-2xl font-bold text-sm text-amber-300 uppercase shadow-lg">
+                        ⚒️ تطوير مدفع الجعران
+                    </button>
+                    <button onclick="openShopModal()" class="bg-slate-800 hover:bg-slate-700 border border-amber-500/60 py-3 rounded-2xl font-bold text-sm text-amber-300 uppercase shadow-lg">
+                        🏺 متجر الكنوز
+                    </button>
+                </div>
+
+                <div class="mt-6 text-[11px] text-slate-400">
+                    <span>💡 يمكنك التبديل بين الكرات بالزر الأيمن للماوس أو زر المسافة (Space)</span>
                 </div>
             </div>
 
-            <!-- 2. Weapon Upgrade Modal (التصميم الدقيق لواجهة التطوير من المحادثة) -->
-            <div id="upgrade-modal" class="modal opacity-0 pointer-events-none transition-all duration-300 absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50">
-                <div class="max-w-sm sm:max-w-md w-full bg-slate-900 border-2 border-amber-500/80 rounded-3xl p-5 sm:p-6 shadow-2xl relative hieroglyph-border">
-                    <button onclick="window.closeUpgradeModal()" class="absolute top-4 left-4 w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold flex items-center justify-center">✕</button>
+            <!-- 2. Level Select Overlay -->
+            <div id="level-select-overlay" class="game-overlay absolute inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-6 z-30 hidden">
+                <div class="flex items-center justify-between w-full max-w-md mb-6">
+                    <h2 class="text-xl font-black text-amber-400">اختر المرحلة</h2>
+                    <button onclick="closeLevelSelect()" class="w-8 h-8 rounded-xl bg-slate-800 text-white font-bold hover:bg-slate-700">✕</button>
+                </div>
+
+                <div id="levels-grid" class="grid grid-cols-5 gap-3 max-w-md">
+                    <!-- Populated dynamically by UI.js -->
+                </div>
+            </div>
+
+            <!-- 3. Scarab Cannon Upgrade Modal (نظام تطوير المدفع الفرعوني) -->
+            <div id="upgrade-modal" class="game-overlay absolute inset-0 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 z-40 hidden">
+                <div class="max-w-sm w-full bg-slate-900 border-2 border-amber-500/80 rounded-3xl p-5 shadow-2xl relative hieroglyph-border">
+                    <button onclick="closeUpgradeModal()" class="absolute top-4 left-4 w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold flex items-center justify-center">✕</button>
                     
-                    <!-- Header -->
-                    <div class="text-center pb-3 border-b border-slate-800">
-                        <h2 class="text-lg font-black text-amber-400">تطوير الأسلحة ⚒️</h2>
+                    <div class="text-center pb-2 border-b border-slate-800">
+                        <h2 class="text-lg font-black text-amber-400">تطوير مدفع الجعران الذهبي ⚒️</h2>
                         <div class="flex justify-center gap-4 mt-2 text-xs font-bold">
                             <span class="text-slate-300">الذهب: <b id="upg-coins-balance" class="text-amber-400 font-mono">0</b> 🪙</span>
                             <span class="text-slate-300">أحجار الشمس: <b id="upg-stones-balance" class="text-amber-300 font-mono">0</b> ☀️</span>
                         </div>
                     </div>
 
-                    <!-- Weapon Showcase Card -->
-                    <div class="my-4 bg-slate-800/70 border border-amber-500/40 rounded-2xl p-4 text-center">
-                        <div id="upg-icon" class="text-5xl mb-1">⚔️</div>
-                        <h3 id="upg-name" class="text-base font-black text-amber-300">سيف الفرعون</h3>
-                        <div class="flex justify-center gap-2 items-center mt-1">
-                            <span id="upg-type" class="text-xs px-2 py-0.5 rounded bg-purple-900/60 text-purple-300 border border-purple-500/40">ملحمي</span>
-                            <span id="upg-level" class="text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold">المستوى +7</span>
+                    <div class="my-4 bg-slate-800/80 border border-amber-500/40 rounded-2xl p-4 text-center">
+                        <div class="text-5xl mb-2 animate-bounce">𓆣</div>
+                        <h3 class="text-base font-black text-amber-300">مدفع الجعران المقدس</h3>
+                        <span id="upg-level-badge" class="inline-block mt-1 text-xs px-2.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold border border-amber-500/30">المستوى +1</span>
+                    </div>
+
+                    <div class="bg-slate-950/60 rounded-xl p-3 space-y-1.5 text-xs border border-slate-800 mb-3">
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">سرعة إطلاق الكرات:</span>
+                            <span id="upg-speed-stat" class="text-emerald-400 font-bold font-mono">22 → 24</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">احتمال مضاعفة النقاط:</span>
+                            <span class="text-emerald-400 font-bold">+15% ✅</span>
                         </div>
                     </div>
 
-                    <!-- Stats Comparison -->
-                    <div class="bg-slate-950/60 rounded-xl p-3 space-y-1.5 text-xs border border-slate-800">
-                        <div class="flex justify-between">
-                            <span class="text-slate-400">القوة (الضرر):</span>
-                            <span id="upg-power" class="text-emerald-400 font-bold font-mono">320 → 350</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-slate-400">الضربة الحرجة:</span>
-                            <span id="upg-crit" class="text-emerald-400 font-bold font-mono">15% → 18%</span>
-                        </div>
-                        <div class="flex justify-between pt-1 border-t border-slate-800/80">
-                            <span class="text-slate-400">احتمال النجاح:</span>
-                            <span id="upg-success-rate" class="text-emerald-400 font-bold">80% ✅</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-slate-400">احتمال الفشل:</span>
-                            <span id="upg-fail-rate" class="text-red-400 font-bold">20% ❌</span>
-                        </div>
+                    <div class="mb-4 p-2 bg-amber-500/10 border border-amber-500/30 rounded-xl flex justify-around text-xs font-bold text-amber-300">
+                        <div>المتطلبات: <span id="upg-gold-cost" class="text-white font-mono">200 ذهب</span></div>
+                        <div>+ <span id="upg-stone-cost" class="text-white font-mono">1 حجر شمس ☀️</span></div>
                     </div>
 
-                    <!-- Cost Requirements -->
-                    <div class="my-3 p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-xl flex justify-around text-xs font-bold text-amber-300">
-                        <div>المتطلبات: <span id="upg-gold-cost" class="text-white font-mono">500 ذهب</span></div>
-                        <div>+ <span id="upg-stone-cost" class="text-white font-mono">3 حجر شمس ☀️</span></div>
-                    </div>
-
-                    <!-- Feedback message -->
-                    <div id="upgrade-feedback" class="hidden text-center text-xs font-black mb-3"></div>
-
-                    <!-- Upgrade Action Button -->
-                    <button id="do-upgrade-btn" class="w-full py-3 rounded-xl gold-btn text-sm font-black shadow-lg">
-                        تطوير السلاح الآن ⚒️
+                    <button onclick="doUpgradeScarab()" class="w-full py-3 rounded-xl gold-btn text-sm font-black shadow-lg">
+                        تطوير المدفع الآن ⚒️
                     </button>
                 </div>
             </div>
 
-            <!-- 3. Inventory Modal -->
-            <div id="inventory-modal" class="modal opacity-0 pointer-events-none transition-all duration-300 absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50">
-                <div class="max-w-md w-full bg-slate-900 border-2 border-amber-500/70 rounded-3xl p-5 shadow-2xl relative">
-                    <button onclick="window.closeInventoryModal()" class="absolute top-4 left-4 w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold flex items-center justify-center">✕</button>
-                    <h2 class="text-lg font-black text-amber-400 text-center mb-4">🎒 حقيبة الأسلحة</h2>
-                    <div id="inventory-list" class="space-y-2.5 max-h-80 overflow-y-auto pr-1">
-                        <!-- Loaded dynamically from UI.js -->
+            <!-- 4. Victory / Stage Cleared Modal -->
+            <div id="victory-modal" class="game-overlay absolute inset-0 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-6 z-30 hidden">
+                <div class="bg-slate-900 border-4 border-amber-500 rounded-3xl p-6 text-center max-w-sm w-full shadow-2xl hieroglyph-border">
+                    <div class="text-5xl mb-2 animate-bounce">🏆</div>
+                    <h3 class="text-2xl font-black text-amber-400 mb-1">تم تطهير المسار!</h3>
+                    <p class="text-xs text-slate-300">أكملت المرحلة <span id="victory-level">1</span> بنجاح</p>
+
+                    <div class="flex justify-center gap-2 my-4 text-3xl text-amber-400">
+                        <span>★</span><span>★</span><span>★</span>
+                    </div>
+
+                    <div class="bg-slate-800 p-3 rounded-2xl border border-slate-700 my-4 text-xs space-y-1">
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">مجموع النقاط:</span>
+                            <span id="victory-score" class="font-bold text-white font-mono">0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">المكافأة:</span>
+                            <span id="victory-coins" class="font-bold text-amber-400 font-mono">+100 🪙  +3 ☀️</span>
+                        </div>
+                    </div>
+
+                    <button onclick="nextLevel()" class="w-full gold-btn py-3.5 rounded-2xl font-black text-base uppercase shadow-lg">
+                        المرحلة التالية ➔
+                    </button>
+                </div>
+            </div>
+
+            <!-- 5. Game Over Modal -->
+            <div id="gameover-modal" class="game-overlay absolute inset-0 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-6 z-30 hidden">
+                <div class="bg-slate-900 border-4 border-red-500 rounded-3xl p-6 text-center max-w-sm w-full shadow-2xl">
+                    <div class="text-5xl mb-2">💀</div>
+                    <h3 class="text-2xl font-black text-red-500 mb-1">وصلت الكرات للمقبرة!</h3>
+                    <p class="text-xs text-slate-300 mb-4">ابتلعت بوابة أبو الهول كرات الفراعنة</p>
+
+                    <div class="bg-slate-800 p-3 rounded-2xl border border-slate-700 mb-4 text-xs">
+                        <span class="text-slate-400">النقاط المحققة:</span>
+                        <span id="gameover-score" class="font-bold text-white font-mono block text-xl mt-0.5">0</span>
+                    </div>
+
+                    <div class="space-y-2">
+                        <button onclick="retryLevel()" class="w-full gold-btn py-3 rounded-2xl font-black text-sm uppercase">
+                            🔄 حاول مرة أخرى
+                        </button>
+                        <button onclick="goToMenu()" class="w-full bg-slate-800 hover:bg-slate-700 py-3 rounded-2xl font-bold text-sm text-slate-300">
+                            القائمة الرئيسية
+                        </button>
                     </div>
                 </div>
             </div>
 
-            <!-- 4. Shop Modal -->
-            <div id="shop-modal" class="modal opacity-0 pointer-events-none transition-all duration-300 absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50">
-                <div class="max-w-md w-full bg-slate-900 border-2 border-amber-500/70 rounded-3xl p-5 shadow-2xl relative">
-                    <button onclick="window.closeShopModal()" class="absolute top-4 left-4 w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold flex items-center justify-center">✕</button>
+            <!-- 6. Shop Modal -->
+            <div id="shop-modal" class="game-overlay absolute inset-0 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 z-40 hidden">
+                <div class="max-w-sm w-full bg-slate-900 border-2 border-amber-500/70 rounded-3xl p-5 shadow-2xl relative">
+                    <button onclick="closeShopModal()" class="absolute top-4 left-4 w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold flex items-center justify-center">✕</button>
                     <h2 class="text-lg font-black text-amber-400 text-center mb-4">🏺 متجر الهرم</h2>
                     <div class="space-y-3">
                         <div class="bg-slate-800/80 border border-slate-700 p-3 rounded-2xl flex items-center justify-between">
                             <div>
-                                <div class="font-bold text-amber-300">حزمة ذهب فرعوني 🪙</div>
-                                <div class="text-xs text-slate-400">+1000 قطعة نقدية فورية</div>
+                                <div class="font-bold text-amber-300 text-xs">حزمة ذهب فرعوني 🪙</div>
+                                <div class="text-[10px] text-slate-400">+500 عملة لاستخدام المساعدات</div>
                             </div>
-                            <button onclick="game.coins += 1000; window.soundEngine.playCoin(); window.closeShopModal();" class="px-4 py-2 rounded-xl gold-btn text-xs font-black">
-                                احصل مجاناً
+                            <button onclick="game.coins += 500; window.soundEngine.playCoin(); closeShopModal(); game.updateHUD();" class="px-3 py-1.5 rounded-xl gold-btn text-xs font-black">
+                                مجاناً
                             </button>
                         </div>
                         <div class="bg-slate-800/80 border border-slate-700 p-3 rounded-2xl flex items-center justify-between">
                             <div>
-                                <div class="font-bold text-amber-300">أحجار شمس نادرة ☀️</div>
-                                <div class="text-xs text-slate-400">+10 أحجار لتطوير العتاد الأسطوري</div>
+                                <div class="font-bold text-amber-300 text-xs">أحجار شمس نادرة ☀️</div>
+                                <div class="text-[10px] text-slate-400">+5 أحجار لتطوير المدفع</div>
                             </div>
-                            <button onclick="game.sunStones += 10; window.soundEngine.playStonePickup(); window.closeShopModal();" class="px-4 py-2 rounded-xl gold-btn text-xs font-black">
-                                احصل مجاناً
-                            </button>
-                        </div>
-                        <div class="bg-slate-800/80 border border-slate-700 p-3 rounded-2xl flex items-center justify-between">
-                            <div>
-                                <div class="font-bold text-emerald-400">جرعة إكسير الحياة ❤️</div>
-                                <div class="text-xs text-slate-400">استعادة الصحة بالكامل فوراً</div>
-                            </div>
-                            <button onclick="game.player.hp = game.player.maxHp; window.soundEngine.playStonePickup(); window.closeShopModal();" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black">
-                                استخدام
+                            <button onclick="game.sunStones += 5; window.soundEngine.playCoin(); closeShopModal(); game.updateHUD();" class="px-3 py-1.5 rounded-xl gold-btn text-xs font-black">
+                                مجاناً
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 5. Pause Modal -->
-            <div id="pause-modal" class="modal opacity-0 pointer-events-none transition-all duration-300 absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50">
+            <!-- 7. Pause Modal -->
+            <div id="pause-modal" class="game-overlay absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-30 hidden">
                 <div class="max-w-xs w-full bg-slate-900 border-2 border-amber-500/70 rounded-3xl p-6 text-center shadow-2xl">
                     <h2 class="text-xl font-black text-amber-400 mb-6">اللعبة متوقفة مؤقتاً ⏸</h2>
                     <div class="space-y-3">
-                        <button onclick="game.togglePause()" class="w-full py-3 rounded-xl gold-btn text-sm font-black">استئناف اللعب</button>
-                        <button onclick="window.restartGame()" class="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-sm font-black">إعادة المغامرة</button>
+                        <button onclick="pauseGame()" class="w-full py-3 rounded-xl gold-btn text-sm font-black">استئناف اللعب</button>
+                        <button onclick="goToMenu()" class="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-sm font-black">القائمة الرئيسية</button>
                     </div>
-                </div>
-            </div>
-
-            <!-- 6. Game Over Modal -->
-            <div id="game-over-modal" class="modal opacity-0 pointer-events-none transition-all duration-300 absolute inset-0 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 z-50">
-                <div class="max-w-sm w-full bg-slate-900 border-2 border-red-500 rounded-3xl p-6 text-center shadow-2xl">
-                    <div class="text-5xl mb-2">💀</div>
-                    <h2 class="text-2xl font-black text-red-500 mb-1">سقط المستكشف!</h2>
-                    <p class="text-xs text-slate-400 mb-5">ابتلعتك لعنة الفراعنة داخل الهرم</p>
-                    <button onclick="window.restartGame()" class="w-full py-3.5 rounded-2xl gold-btn text-sm font-black">
-                        🔄 حاول مرة أخرى
-                    </button>
-                </div>
-            </div>
-
-            <!-- 7. Victory Modal -->
-            <div id="victory-modal" class="modal opacity-0 pointer-events-none transition-all duration-300 absolute inset-0 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 z-50">
-                <div class="max-w-sm w-full bg-slate-900 border-2 border-amber-400 rounded-3xl p-6 text-center shadow-2xl">
-                    <div class="text-5xl mb-2">👑</div>
-                    <h2 class="text-2xl font-black text-amber-400 mb-1 gold-glow">تم فتح سر الهرم!</h2>
-                    <p class="text-xs text-slate-300 mb-5">هزمت حراس المعبد وحصلت على جوهرة الحياة الأسطورية</p>
-                    <button onclick="window.restartGame()" class="w-full py-3.5 rounded-2xl gold-btn text-sm font-black">
-                        🏆 خوض التحدي مجدداً
-                    </button>
                 </div>
             </div>
 
@@ -294,4 +257,3 @@
     <script src="assets/js/ui.js"></script>
 </body>
 </html>
-

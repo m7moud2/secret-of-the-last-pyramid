@@ -1,13 +1,15 @@
 /**
- * Secret of the Last Pyramid — Procedural Web Audio Sound Engine
- * Zero external audio files needed; full Web Audio synthesis.
+ * Secret of the Last Pyramid: Pharaoh Zuma — Sound Engine
+ * Procedural Web Audio API for Egyptian Marble Shooter
  */
 
 class SoundEngine {
     constructor() {
         this.ctx = null;
         this.enabled = true;
-        this.ambientPlaying = false;
+        this.bgmOsc = null;
+        this.bgmGain = null;
+        this.isBgmPlaying = false;
         this.initOnUserGesture();
     }
 
@@ -15,9 +17,7 @@ class SoundEngine {
         const unlock = () => {
             if (!this.ctx) {
                 const AudioCtx = window.AudioContext || window.webkitAudioContext;
-                if (AudioCtx) {
-                    this.ctx = new AudioCtx();
-                }
+                if (AudioCtx) this.ctx = new AudioCtx();
             }
             if (this.ctx && this.ctx.state === 'suspended') {
                 this.ctx.resume();
@@ -37,7 +37,6 @@ class SoundEngine {
         }
     }
 
-    // Play quick tone
     playTone(freq, type = 'sine', duration = 0.15, gainVal = 0.2, pitchBend = 0) {
         if (!this.enabled) return;
         this.ensureContext();
@@ -62,135 +61,77 @@ class SoundEngine {
 
             osc.start(now);
             osc.stop(now + duration);
-        } catch (e) {
-            // Ignore audio context errors
-        }
-    }
-
-    // Sword Slash / Swing
-    playSlash() {
-        if (!this.enabled) return;
-        this.ensureContext();
-        if (!this.ctx) return;
-
-        try {
-            const bufferSize = this.ctx.sampleRate * 0.12;
-            const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-            const data = buffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) {
-                data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.3));
-            }
-            const noise = this.ctx.createBufferSource();
-            noise.buffer = buffer;
-
-            const filter = this.ctx.createBiquadFilter();
-            filter.type = 'bandpass';
-            filter.frequency.setValueAtTime(800, this.ctx.currentTime);
-            filter.frequency.exponentialRampToValueAtTime(2200, this.ctx.currentTime + 0.12);
-
-            const gain = this.ctx.createGain();
-            gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.12);
-
-            noise.connect(filter);
-            filter.connect(gain);
-            gain.connect(this.ctx.destination);
-
-            noise.start();
         } catch (e) {}
     }
 
-    // Hit Enemy / Damage Impact
-    playHit() {
-        this.playTone(180, 'triangle', 0.1, 0.25, -120);
-        this.playTone(90, 'sawtooth', 0.15, 0.2, -50);
+    // Shoot Marble from Scarab
+    playShoot() {
+        this.playTone(520, 'triangle', 0.12, 0.25, -280);
     }
 
-    // Player Hurt
-    playPlayerHurt() {
-        this.playTone(240, 'sawtooth', 0.2, 0.3, -150);
+    // Marble Clack / Insert
+    playClack() {
+        this.playTone(850, 'sine', 0.05, 0.2, -400);
     }
 
-    // Dodge / Dash Whoosh
-    playDodge() {
-        this.playTone(400, 'sine', 0.18, 0.15, -250);
+    // Swap Ball in Scarab
+    playSwap() {
+        this.playTone(400, 'triangle', 0.08, 0.15, 300);
     }
 
-    // Sun Beam / Solar Magic (شعاع رع)
-    playMagicBeam() {
-        if (!this.enabled) return;
-        this.ensureContext();
-        if (!this.ctx) return;
-
-        try {
-            const now = this.ctx.currentTime;
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(300, now);
-            osc.frequency.exponentialRampToValueAtTime(1200, now + 0.2);
-            osc.frequency.exponentialRampToValueAtTime(600, now + 0.5);
-
-            gain.gain.setValueAtTime(0.25, now);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
-
-            osc.connect(gain);
-            gain.connect(this.ctx.destination);
-            osc.start(now);
-            osc.stop(now + 0.5);
-        } catch (e) {}
+    // Match 3+ Marbles Blasted!
+    playMatch(combo = 1) {
+        const baseFreq = 440 + Math.min(combo * 90, 600);
+        this.playTone(baseFreq, 'triangle', 0.15, 0.3, 100);
+        setTimeout(() => {
+            this.playTone(baseFreq * 1.25, 'sine', 0.2, 0.35, 80);
+        }, 70);
     }
 
-    // Coin Pickup (ذهبي)
+    // Bomb / Explosion
+    playBomb() {
+        this.playTone(120, 'sawtooth', 0.35, 0.45, -70);
+        this.playTone(60, 'triangle', 0.5, 0.5, -30);
+    }
+
+    // Freeze Time Booster
+    playFreeze() {
+        this.playTone(700, 'sine', 0.4, 0.25, -350);
+        setTimeout(() => this.playTone(900, 'triangle', 0.3, 0.2, -450), 120);
+    }
+
+    // Rewind / Reverse Chain
+    playRewind() {
+        this.playTone(220, 'sine', 0.25, 0.25, 350);
+    }
+
+    // Coin / Golden Scarab Collected
     playCoin() {
-        this.playTone(987.77, 'sine', 0.08, 0.2, 200); // B5
-        setTimeout(() => {
-            this.playTone(1318.51, 'sine', 0.15, 0.22, 100); // E6
-        }, 60);
+        this.playTone(987.77, 'sine', 0.08, 0.25, 200);
+        setTimeout(() => this.playTone(1318.51, 'sine', 0.15, 0.3, 100), 60);
     }
 
-    // Sun Stone Pickup (حجر الشمس ☀️)
-    playStonePickup() {
-        this.playTone(523.25, 'triangle', 0.12, 0.3, 100);
-        setTimeout(() => this.playTone(659.25, 'triangle', 0.12, 0.3, 100), 70);
-        setTimeout(() => this.playTone(783.99, 'sine', 0.2, 0.35, 100), 140);
-        setTimeout(() => this.playTone(1046.50, 'sine', 0.35, 0.4, 0), 220);
+    // Danger Pulse (When marbles are near tomb)
+    playDanger() {
+        this.playTone(180, 'sawtooth', 0.18, 0.3, -50);
     }
 
-    // Upgrade Success Fanfare!
-    playUpgradeSuccess() {
-        const notes = [440, 554.37, 659.25, 880];
-        notes.forEach((freq, idx) => {
-            setTimeout(() => {
-                this.playTone(freq, 'triangle', 0.22, 0.3, 0);
-            }, idx * 90);
-        });
-    }
-
-    // Upgrade Failure Thud
-    playUpgradeFail() {
-        this.playTone(280, 'sawtooth', 0.25, 0.3, -160);
-        setTimeout(() => {
-            this.playTone(180, 'sawtooth', 0.35, 0.35, -90);
-        }, 120);
-    }
-
-    // Boss Roar / Earthquake
-    playBossSlam() {
-        this.playTone(80, 'sawtooth', 0.6, 0.4, -40);
-        this.playTone(55, 'triangle', 0.8, 0.5, -25);
-    }
-
-    // Level Clear / Victory
+    // Stage Cleared / Victory
     playVictory() {
-        const chord = [392, 493.88, 587.33, 783.99];
-        chord.forEach((f, i) => {
-            setTimeout(() => this.playTone(f, 'triangle', 0.4, 0.25), i * 110);
+        const notes = [392, 523.25, 659.25, 783.99, 1046.5];
+        notes.forEach((f, i) => {
+            setTimeout(() => this.playTone(f, 'triangle', 0.35, 0.3), i * 110);
         });
     }
 
-    // Toggle mute
+    // Game Over
+    playGameOver() {
+        const notes = [400, 350, 300, 220];
+        notes.forEach((f, i) => {
+            setTimeout(() => this.playTone(f, 'sawtooth', 0.3, 0.35, -40), i * 140);
+        });
+    }
+
     toggle() {
         this.enabled = !this.enabled;
         return this.enabled;
@@ -198,4 +139,3 @@ class SoundEngine {
 }
 
 window.soundEngine = new SoundEngine();
-
